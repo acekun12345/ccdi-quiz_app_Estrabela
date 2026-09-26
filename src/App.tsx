@@ -1,122 +1,152 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import React, { useState } from 'react';
+import { quizQuestions } from './quizData';
+import type { AnswerStatus } from './types';
+import { Check, X, HelpCircle, Trophy, RotateCcw } from 'lucide-react';
+import './App.css';
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
+  const [userAnswers, setUserAnswers] = useState<AnswerStatus[]>(
+    Array(quizQuestions.length).fill('unanswered')
+  );
+  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isQuizFinished, setIsQuizFinished] = useState<boolean>(false);
+  const [score, setScore] = useState<number>(0);
+
+  // Buksan ang Modal para sa napiling tanong
+  const handleOpenQuestion = (index: number) => {
+    if (userAnswers[index] !== 'unanswered') return;
+    setCurrentQuestionIndex(index);
+    setSelectedOption(null);
+    setIsModalOpen(true);
+  };
+
+  // Submit Answer Handler
+  const handleSubmitAnswer = () => {
+    if (selectedOption === null) return;
+
+    const currentQ = quizQuestions[currentQuestionIndex];
+    const isCorrect = selectedOption === currentQ.correctAnswer;
+
+    const newAnswers = [...userAnswers];
+    newAnswers[currentQuestionIndex] = isCorrect ? 'correct' : 'wrong';
+    setUserAnswers(newAnswers);
+
+    if (isCorrect) {
+      setScore((prev) => prev + 1);
+    }
+
+    setIsModalOpen(false);
+
+    // Check kung tapos na ang 10 items
+    const remainingUnanswered = newAnswers.filter((status) => status === 'unanswered').length;
+    if (remainingUnanswered === 0) {
+      setIsQuizFinished(true);
+    }
+  };
+
+  // Restart Quiz Handler
+  const handleRestart = () => {
+    setUserAnswers(Array(quizQuestions.length).fill('unanswered'));
+    setCurrentQuestionIndex(0);
+    setScore(0);
+    setIsQuizFinished(false);
+    setIsModalOpen(false);
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="quiz-container">
+      {/* HEADER */}
+      <header className="quiz-header">
+        <h1>CCDI React Quiz Portal</h1>
+        <p>Topic: Conditional Rendering & Modal Components</p>
+      </header>
+
+      {/* TOP PROGRESS TRACKER (10 Items) */}
+      <div className="progress-bar-card">
+        <h3>Quiz Progress Tracker</h3>
+        <div className="progress-items-grid">
+          {userAnswers.map((status, index) => (
+            <button
+              key={index}
+              className={`progress-item ${status} ${currentQuestionIndex === index && isModalOpen ? 'active' : ''}`}
+              onClick={() => handleOpenQuestion(index)}
+              disabled={status !== 'unanswered'}
+            >
+              <span className="item-number">#{index + 1}</span>
+
+              {/* CONDITIONAL RENDERING NG ICONS */}
+              {status === 'correct' && <Check className="icon check-icon" size={18} />}
+              {status === 'wrong' && <X className="icon wrong-icon" size={18} />}
+              {status === 'unanswered' && <HelpCircle className="icon pending-icon" size={18} />}
+            </button>
+          ))}
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
+      </div>
+
+      {/* CONDITIONAL RENDERING: SUMMARY PAGE O INSTRUCTIONS */}
+      {isQuizFinished ? (
+        <div className="results-card">
+          <Trophy size={64} className="trophy-icon" />
+          <h2>Quiz Completed!</h2>
+          <p className="score-text">
+            Your Score: <span>{score}</span> / {quizQuestions.length}
           </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+          <p className="score-percentage">
+            Percentage: {((score / quizQuestions.length) * 100).toFixed(0)}%
+          </p>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+          <button className="btn-restart" onClick={handleRestart}>
+            <RotateCcw size={18} /> Take Quiz Again
+          </button>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
+      ) : (
+        <div className="instructions-card">
+          <h3>Instructions:</h3>
+          <p>Click on any question number above to open the modal and submit your answer.</p>
         </div>
-      </section>
+      )}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      {/* CONDITIONAL RENDERING: MODAL POPUP */}
+      {isModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <span>Question {currentQuestionIndex + 1} of {quizQuestions.length}</span>
+              <button className="close-btn" onClick={() => setIsModalOpen(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <h3 className="question-text">
+              {quizQuestions[currentQuestionIndex].question}
+            </h3>
+
+            <div className="options-list">
+              {quizQuestions[currentQuestionIndex].options.map((option, optIdx) => (
+                <button
+                  key={optIdx}
+                  className={`option-btn ${selectedOption === optIdx ? 'selected' : ''}`}
+                  onClick={() => setSelectedOption(optIdx)}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+
+            <div className="modal-footer">
+              <button
+                className="btn-submit"
+                disabled={selectedOption === null}
+                onClick={handleSubmitAnswer}
+              >
+                Submit Answer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
-
-export default App
